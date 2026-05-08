@@ -89,3 +89,16 @@ export const resetScrollRegion = `${CSI}r`;
 export function setTitle(title: string): string {
     return `${OSC}0;${title}\x07`;
 }
+
+// ── Clipboard ───────────────────────────────────────
+
+/**
+ * Write text to the system clipboard via OSC 52.
+ * Supported by: xterm, iTerm2, Kitty, WezTerm, Alacritty, Windows Terminal.
+ * @param text Plain text to copy to clipboard
+ * @param stdout Target stream (default: process.stdout)
+ */
+export function writeClipboard(text: string, stdout: NodeJS.WriteStream = process.stdout): void {
+    const encoded = Buffer.from(text, 'utf8').toString('base64');
+    stdout.write(`${OSC}52;c;${encoded}\x07`);
+}

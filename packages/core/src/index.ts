@@ -44,8 +44,9 @@ export type { BorderStyle, BorderChars } from './style/Border.js';
 export {
     parseColor, colorToRgb, colorToAnsiFg, colorToAnsiBg,
     detectColorDepth, ColorDepth,
+    relativeLuminance, contrastRatio, wcagLevel, validateThemeContrast,
 } from './style/Color.js';
-export type { Color, NamedColor } from './style/Color.js';
+export type { Color, NamedColor, ContrastFailure } from './style/Color.js';
 
 // ── Symbols ───────────────────────────────────────────
 export {
@@ -70,3 +71,4 @@ export { shouldUseFallback, renderFallback } from './app/Fallback.js';
 // ── Utilities ─────────────────────────────────────────
 export { stringWidth, truncate, stripAnsi, wordWrap } from './utils/unicode.js';
 export * as ansi from './utils/ansi.js';
+export { writeClipboard } from './utils/ansi.js';

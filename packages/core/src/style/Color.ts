@@ -270,3 +270,88 @@ export function colorToAnsiBg(color: Color, depth: ColorDepth): string {
             return '';
     }
 }
+
+// ── WCAG Contrast Utilities ──────────────────────────
+
+/**
+ * Compute relative luminance per WCAG 2.1.
+ * Returns value in [0, 1] where 0 = black, 1 = white.
+ */
+export function relativeLuminance(color: Color): number {
+    const [r, g, b] = colorToRgb(color);
+    const linearize = (c: number): number => {
+        const sRGB = c / 255;
+        return sRGB <= 0.03928 ? sRGB / 12.92 : Math.pow((sRGB + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+}
+
+/**
+ * Compute WCAG 2.1 contrast ratio between foreground and background colors.
+ * Returns value in [1, 21] where 21 is maximum contrast (black on white).
+ */
+export function contrastRatio(fg: Color, bg: Color): number {
+    const l1 = relativeLuminance(fg);
+    const l2 = relativeLuminance(bg);
+    const lighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * Determine WCAG 2.1 conformance level for a contrast ratio.
+ * @param ratio  Result of contrastRatio()
+ * @param large  True if text is large (18pt+ regular or 14pt+ bold). Default: false.
+ */
+export function wcagLevel(ratio: number, large = false): 'AAA' | 'AA' | 'A' | 'fail' {
+    if (large) {
+        if (ratio >= 4.5) return 'AAA';
+        if (ratio >= 3.0) return 'AA';
+        return 'fail';
+    }
+    if (ratio >= 7.0) return 'AAA';
+    if (ratio >= 4.5) return 'AA';
+    if (ratio >= 3.0) return 'A';
+    return 'fail';
+}
+
+export interface ContrastFailure {
+    /** Description of the color pair, e.g. 'fg on bg' */
+    pair: string;
+    ratio: number;
+    level: 'A' | 'fail';
+    required: 'AA';
+}
+
+/**
+ * Validate contrast for key pairs in a theme (hex string map).
+ * Checks: fg/bg, primary/bg, error/bg, success/bg, warning/bg, muted/bg.
+ * Returns failures (pairs below AA = 4.5:1 for normal text).
+ */
+export function validateThemeContrast(theme: Record<string, string>): ContrastFailure[] {
+    const failures: ContrastFailure[] = [];
+    const bg = theme['bg'];
+    if (!bg) return failures;
+
+    const bgColor = parseColor(bg);
+    const pairs: Array<[string, string | undefined]> = [
+        ['fg on bg', theme['fg']],
+        ['primary on bg', theme['primary']],
+        ['error on bg', theme['error']],
+        ['success on bg', theme['success']],
+        ['warning on bg', theme['warning']],
+        ['muted on bg', theme['muted']],
+    ];
+
+    for (const [label, hex] of pairs) {
+        if (!hex) continue;
+        const fgColor = parseColor(hex);
+        const ratio = contrastRatio(fgColor, bgColor);
+        const level = wcagLevel(ratio);
+        if (level !== 'AAA' && level !== 'AA') {
+            failures.push({ pair: label, ratio: Math.round(ratio * 100) / 100, level: level as 'A' | 'fail', required: 'AA' });
+        }
+    }
+
+    return failures;
+}
