@@ -65,6 +65,7 @@ export function currentFiber(): Fiber {
 export function setCurrentFiber(fiber: Fiber): void {
     _currentFiber = fiber;
     fiber.hookIndex = 0; // Reset for each render pass
+    fiber.onInput = undefined; // Reset so dev-mode conflict detection works correctly
 }
 
 /** Clear the current render context */
