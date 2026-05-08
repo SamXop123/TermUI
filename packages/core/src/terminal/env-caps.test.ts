@@ -44,4 +44,14 @@ describe('env-caps', () => {
         const { caps } = await import('./env-caps.js');
         expect(caps.ci).toBe(true);
     });
+
+    it('caps.motion is false when NO_MOTION=1 and CI is unset', async () => {
+        vi.stubEnv('CI', '');
+        vi.stubEnv('NO_MOTION', '1');
+        vi.resetModules();
+        const { caps } = await import('./env-caps.js');
+        expect(caps.motion).toBe(false);
+        vi.unstubAllEnvs();
+        vi.resetModules();
+    });
 });

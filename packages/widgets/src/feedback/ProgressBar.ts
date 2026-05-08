@@ -51,8 +51,8 @@ export class ProgressBar extends Widget {
         this._total = options.total ?? 100;
 
         if (!caps.unicode) {
-            this._fillChar = BLOCK.full;   // '#'
-            this._emptyChar = BLOCK.empty; // ' '
+            if (options.fillChar === undefined) this._fillChar = BLOCK.full;   // '#'
+            if (options.emptyChar === undefined) this._emptyChar = BLOCK.empty; // ' '
         }
     }
 

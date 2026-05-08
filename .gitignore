@@ -6,4 +6,5 @@ coverage/
 .DS_Store
 
 website/
-scratch/.worktrees/
+scratch/
+.worktrees/

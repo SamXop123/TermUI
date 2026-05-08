@@ -63,4 +63,14 @@ describe('ProgressBar — ASCII fallback', () => {
         const fillChar = (pb as unknown as { _fillChar: string })._fillChar;
         expect(fillChar).toBe('█');
     });
+
+    it('preserves user-supplied fillChar when NO_UNICODE=1', async () => {
+        vi.stubEnv('NO_UNICODE', '1');
+        vi.stubEnv('TERM', '');
+        vi.resetModules();
+        const { ProgressBar } = await import('./ProgressBar.js');
+        const pb = new ProgressBar({}, { fillChar: '=' });
+        const fillChar = (pb as unknown as { _fillChar: string })._fillChar;
+        expect(fillChar).toBe('=');
+    });
 });
