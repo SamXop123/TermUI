@@ -292,32 +292,39 @@ export function render(element: VNode, options: TestRenderOptions = {}): TestIns
                 container.clearChildren();
                 container.addChild(newRoot);
                 rootWidget = newRoot;
+                renderToScreen(container, screen);
             } else if (el) {
                 const newRoot = reconcile(currentElement);
                 container.clearChildren();
                 container.addChild(newRoot);
                 rootWidget = newRoot;
+                renderToScreen(container, screen);
+            } else {
+                console.warn('[testing] rerender() called but no fiber instance or element available');
             }
-            renderToScreen(container, screen);
         },
 
         async waitFor(fn: () => void, opts = { timeout: 1000, interval: 10 }): Promise<void> {
             const timeout = opts.timeout ?? 1000;
             const interval = opts.interval ?? 10;
             const deadline = Date.now() + timeout;
+            let lastError: unknown;
             while (Date.now() < deadline) {
                 try {
                     fn();
                     return;
-                } catch {
+                } catch (err) {
+                    lastError = err;
                     await new Promise(r => setTimeout(r, interval));
                 }
             }
-            fn(); // one final attempt to surface the real error
+            // Wrap with timeout context
+            const msg = lastError instanceof Error ? lastError.message : String(lastError);
+            throw new Error(`waitFor timed out after ${timeout}ms: ${msg}`);
         },
 
         renderToString(): string {
-            return readScreenLines(screen).filter(l => l.length > 0).join('\n');
+            return this.toString();
         },
 
         unmount(): void {
