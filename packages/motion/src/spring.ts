@@ -2,6 +2,9 @@
 // Spring Physics — smooth value transitions
 // ─────────────────────────────────────────────────────
 
+import { caps } from '@termuijs/core';
+import { subscribe } from './timer-pool.js';
+
 export interface SpringConfig {
     /** Stiffness (default: 170) */
     tension: number;
@@ -67,28 +70,28 @@ export function animateSpring(
     onFrame: (value: number) => void,
     onComplete?: () => void,
 ): () => void {
+    if (!caps.motion) {
+        onFrame(to);
+        onComplete?.();
+        return () => {};
+    }
+
     const cfg = { ...SPRING_PRESETS.default, ...config };
     let state: SpringState = { value: from, velocity: 0, target: to, done: false };
-    let rafId: ReturnType<typeof setTimeout> | null = null;
-    const frameMs = 16; // ~60fps
     let lastTime = Date.now();
+    let unsub: (() => void) | undefined;
 
-    function tick() {
+    unsub = subscribe(16, () => {
         const now = Date.now();
         const dt = (now - lastTime) / 1000; // Use wall-clock time for accurate physics
         lastTime = now;
         state = stepSpring(state, cfg, dt);
         onFrame(state.value);
         if (state.done) {
+            unsub?.();
             onComplete?.();
-        } else {
-            rafId = setTimeout(tick, frameMs);
         }
-    }
+    });
 
-    rafId = setTimeout(tick, frameMs);
-
-    return () => {
-        if (rafId !== null) clearTimeout(rafId);
-    };
+    return () => unsub?.();
 }

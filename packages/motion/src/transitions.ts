@@ -2,6 +2,9 @@
 // Transitions — pre-built animation effects
 // ─────────────────────────────────────────────────────
 
+import { caps } from '@termuijs/core';
+import { subscribe } from './timer-pool.js';
+
 export type EasingFn = (t: number) => number;
 
 // ── Easing functions ──
@@ -31,23 +34,28 @@ export interface TransitionOptions {
  */
 export function transition(options: TransitionOptions): () => void {
     const { durationMs, easing = easings.easeInOut, onFrame, onComplete } = options;
-    const startTime = Date.now();
-    let timer: ReturnType<typeof setTimeout> | null = null;
 
-    function tick() {
+    if (!caps.motion) {
+        onFrame(easing(1));
+        onComplete?.();
+        return () => {};
+    }
+
+    const startTime = Date.now();
+    let unsub: (() => void) | undefined;
+
+    unsub = subscribe(16, () => {
         const elapsed = Date.now() - startTime;
         const t = Math.min(elapsed / durationMs, 1);
         const easedT = easing(t);
         onFrame(easedT);
-        if (t < 1) {
-            timer = setTimeout(tick, 16);
-        } else {
+        if (t >= 1) {
+            unsub?.();
             onComplete?.();
         }
-    }
+    });
 
-    timer = setTimeout(tick, 0);
-    return () => { if (timer !== null) clearTimeout(timer); };
+    return () => unsub?.();
 }
 
 // ── Pre-built transitions ──
@@ -79,17 +87,19 @@ export function typewriter(text: string, durationMs: number, onFrame: (visibleCh
 
 /** Pulse: oscillates between 0 and 1 */
 export function pulse(periodMs: number, onFrame: (intensity: number) => void): () => void {
-    const start = Date.now();
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (!caps.motion) {
+        onFrame(1);
+        return () => {};
+    }
 
-    function tick() {
+    const start = Date.now();
+
+    const unsub = subscribe(16, () => {
         const elapsed = Date.now() - start;
         const phase = (elapsed % periodMs) / periodMs;
         const intensity = Math.sin(phase * Math.PI * 2) * 0.5 + 0.5;
         onFrame(intensity);
-        timer = setTimeout(tick, 16);
-    }
+    });
 
-    timer = setTimeout(tick, 0);
-    return () => { if (timer !== null) clearTimeout(timer); };
+    return unsub;
 }
