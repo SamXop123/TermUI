@@ -223,6 +223,10 @@ export class DevServer {
                 // Give the child up to 200 ms to handle the message and exit
                 await new Promise<void>(r => setTimeout(r, 200));
             }
+
+            // Check if server was stopped during the grace period
+            if (!this._running) return;
+
             this._killChild();
             // Small delay to let the old process exit
             setTimeout(() => {
