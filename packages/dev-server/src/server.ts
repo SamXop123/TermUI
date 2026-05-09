@@ -209,8 +209,20 @@ export class DevServer {
         if (this._reloadTimer) {
             clearTimeout(this._reloadTimer);
         }
-        this._reloadTimer = setTimeout(() => {
+        this._reloadTimer = setTimeout(async () => {
             this._reloadTimer = null;
+            // Graceful reload: notify the child via IPC so it can unmount
+            // cleanly (flush fibers, close alt-screen, etc.) before we kill it.
+            // IPC is available because we use fork() with the 'ipc' stdio channel.
+            if (this._child && this._child.connected) {
+                try {
+                    this._child.send({ type: 'reload' });
+                } catch {
+                    // channel already closed — fall through to hard kill
+                }
+                // Give the child up to 200 ms to handle the message and exit
+                await new Promise<void>(r => setTimeout(r, 200));
+            }
             this._killChild();
             // Small delay to let the old process exit
             setTimeout(() => {

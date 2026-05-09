@@ -104,9 +104,54 @@ export class DevTools {
         if (lines.length >= maxLines) return;
         const indent = '  '.repeat(depth + 1);
         const rect = `(${node.rect.x},${node.rect.y} ${node.rect.width}×${node.rect.height})`;
-        lines.push(`${indent}${node.type}${node.id ? '#' + node.id : ''} ${rect}`);
+        const extra = this._widgetTypeInfo(node);
+        lines.push(`${indent}${node.type}${node.id ? '#' + node.id : ''} ${rect}${extra}`);
         for (const child of node.children) {
             this._renderTree(child, depth + 1, lines, maxLines);
+        }
+    }
+
+    /**
+     * Return extra inspector info for known widget types.
+     * The node's `type` field matches the widget constructor name.
+     * `style` may carry widget-specific metadata forwarded via IPC.
+     */
+    private _widgetTypeInfo(node: WidgetNode): string {
+        const s = node.style ?? {};
+        switch (node.type) {
+            case 'Grid': {
+                const cols = s['columns'] != null ? `cols=${s['columns']}` : '';
+                const rows = s['rows'] != null ? `rows=${s['rows']}` : '';
+                const gap  = s['gap']  != null ? `gap=${s['gap']}`   : '';
+                const info = [cols, rows, gap].filter(Boolean).join(' ');
+                return info ? `  [Grid: ${info}]` : '  [Grid]';
+            }
+            case 'Skeleton': {
+                const animated = s['animated'] !== false ? 'animated' : 'static';
+                const lines_   = s['lines'] != null ? `lines=${s['lines']}` : '';
+                const info = [animated, lines_].filter(Boolean).join(' ');
+                return `  [Skeleton: ${info}]`;
+            }
+            case 'Tree': {
+                const depth_   = s['depth']    != null ? `depth=${s['depth']}`   : '';
+                const expanded = s['expanded'] != null ? `expanded=${s['expanded']}` : '';
+                const info = [depth_, expanded].filter(Boolean).join(' ');
+                return info ? `  [Tree: ${info}]` : '  [Tree]';
+            }
+            case 'CommandPalette': {
+                const items = s['itemCount'] != null ? `items=${s['itemCount']}` : '';
+                const open  = s['open'] != null ? (s['open'] ? 'open' : 'closed') : '';
+                const info  = [items, open].filter(Boolean).join(' ');
+                return info ? `  [CommandPalette: ${info}]` : '  [CommandPalette]';
+            }
+            case 'Toast': {
+                const variant = s['variant'] != null ? String(s['variant']) : '';
+                const duration = s['duration'] != null ? `${s['duration']}ms` : '';
+                const info = [variant, duration].filter(Boolean).join(' ');
+                return info ? `  [Toast: ${info}]` : '  [Toast]';
+            }
+            default:
+                return '';
         }
     }
 }
