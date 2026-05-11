@@ -19,6 +19,7 @@ export class Renderer {
     private _frameTimer: ReturnType<typeof setInterval> | null = null;
     private _renderRequested = false;
     private _colorDepth: ColorDepth;
+    private _onTick: (() => void) | null = null;
 
     constructor(terminal: Terminal, screen: Screen, fps = 30) {
         this._terminal = terminal;
@@ -32,15 +33,17 @@ export class Renderer {
         this._fps = fps;
         if (this._frameTimer) {
             this.stop();
-            this.start();
+            this.start(this._onTick ?? undefined);
         }
     }
 
     /** Start the render loop */
-    start(): void {
+    start(onTick?: () => void): void {
         if (this._frameTimer) return;
+        this._onTick = onTick ?? null;
         const interval = Math.floor(1000 / this._fps);
         this._frameTimer = setInterval(() => {
+            this._onTick?.();
             if (this._renderRequested) {
                 this._renderRequested = false;
                 this._flush();

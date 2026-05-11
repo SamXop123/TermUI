@@ -4,7 +4,154 @@ All notable changes to TermUI are documented here. The format is based on [Keep 
 
 ---
 
-## [0.1.3] — 2026-04-07
+## [0.1.4] - 2026-05-09
+
+This release adds the focus system, 24 new widgets, 4 new UI inputs, 7 data hooks, imperative prompts, a notification center, motion-preference support, WCAG color utilities, and testing improvements. Total tests: 598.
+
+### Added
+
+#### @termuijs/core
+
+- **Timer pool** - `timerPoolSubscribe(ms, fn)` lets animations and intervals share one underlying `setInterval`. Reduces CPU usage when multiple timers run at the same frame rate.
+- **Capability flags** - `caps` object with `caps.unicode`, `caps.motion`, and `caps.color`. Evaluated once at module load from `NO_UNICODE`, `NO_MOTION`, and `NO_COLOR` environment variables.
+- **WCAG color utilities** - `contrastRatio(fg, bg)`, `meetsAA(fg, bg)`, `meetsAAA(fg, bg)`. Use them to verify accessible color combinations.
+- **String utilities** - `stringWidth`, `truncate`, `wordWrap`, `stripAnsi`. CJK-aware; handles ANSI escape sequences in width calculations.
+
+#### @termuijs/jsx
+
+- **`useKeymap(bindings)`** - Declarative key binding hook. Cleaner than chained `useInput` checks. Multiple calls in one component are additive. Cleanup runs on unmount.
+- **`useMotion()`** - Returns `{ prefersReducedMotion }`. Reads `caps.motion` so components skip timer-based animations when `NO_MOTION=1`.
+- **`ErrorBoundary`** - Wraps any subtree. Caught errors render a fallback instead of crashing the app. `boundary.reset()` clears error state and re-renders children.
+- **Focus system** - Four hooks for keyboard-accessible interfaces:
+  - `useFocusManager()` - Owns the global focus state. Mount at the app root.
+  - `useFocus({ id, autoFocus? })` - Reads and sets focus per widget.
+  - `useFocusTrap(ids[])` - Traps Tab and Shift+Tab within an array of IDs. Use inside modals and dialogs.
+  - `useKeyboardNavigation({ items, loop?, pageSize? })` - Standard arrow key list navigation with Home, End, PgUp, PgDn.
+- **Fiber identity reuse** - The reconciler reuses existing fiber instances when component type and tree position both match. `useState` and `useRef` values survive parent re-renders. Animated components no longer reset on sibling updates.
+
+#### @termuijs/widgets
+
+New display widgets:
+
+- `StreamingText` - Typewriter effect. Respects `caps.motion`; outputs instantly when `NO_MOTION=1`.
+- `ChatMessage` - Chat bubble with role-aware styling for `user`, `assistant`, and `system` roles.
+- `ToolCall` - AI tool call display with status indicator and collapsible args and result.
+- `JSONView` - Collapsible, keyboard-navigable JSON tree viewer.
+- `DiffView` - Unified diff viewer with colored add and remove lines.
+- `BigText` - Large ASCII art banner text. Built-in 5x3 character map; no external dependencies.
+- `Gradient` - Text with per-character 256-color gradient between two colors.
+
+New layout widgets:
+
+- `Card` - Bordered container with optional title in the border.
+- `ScrollView` - Height-bounded scrollable container. Arrow keys, PgUp, PgDn to scroll.
+- `Center` - Centers a single child horizontally, vertically, or both.
+- `Columns` - Evenly-split column layout from an array of widgets.
+- `Sidebar` - Navigable sidebar with items, badges, and active highlight.
+- `KeyValue` - Aligned key: value pairs with configurable separator and colors.
+- `Definition` - Term (bold) and definition (normal) stacked pairs.
+- `Banner` - Full-width alert with title, body, and variant color.
+- `StatusMessage` - Compact icon and message. Icons respect `caps.unicode` (uses ASCII fallbacks when `NO_UNICODE=1`).
+- `Grid` - CSS-grid-style layout. Items flow left-to-right and wrap every N columns.
+
+New chart widgets:
+
+- `LineChart` - ASCII line plot with labeled X/Y axes and multi-series support. Uses unicode plot characters with ASCII fallbacks.
+- `HeatMap` - 2D matrix with color-scale shading and row and column labels. Unicode shading with ASCII fallbacks.
+
+New feedback widgets:
+
+- `Skeleton` - Animated loading placeholder. `pulse` and `shimmer` variants. Respects `caps.motion`.
+- `MultiProgress` - Multiple labeled progress bars in one widget.
+- `CommandPalette` - Searchable, filterable command menu.
+
+Earlier additions:
+
+- `Tree` - Collapsible tree for hierarchical data.
+- `BarChart` - Horizontal or vertical bar chart with grouping support.
+
+#### @termuijs/ui
+
+- **`NotificationCenter`** - Floating notification stack. Mount once at the app root.
+- **`useNotifications()`** - `notify(message, { type, duration })` and `dismiss(id)`. Returns notification IDs. Pass `duration: 0` for persistent notifications.
+- **Imperative prompts** - `prompt.text()`, `prompt.confirm()`, `prompt.select()`, `prompt.multiSelect()`. All return Promises. A focus trap is applied automatically while the prompt is open.
+- **`PasswordInput`** - Text input with character masking. Alt+V toggles visibility.
+- **`NumberInput`** - Digits and decimal only. Arrow keys step by configurable amount. Rejects non-numeric input.
+- **`PathInput`** - Text input with Tab-completion from the file system via `fs.readdirSync`.
+- **`KeyboardShortcuts`** - Renders a grouped grid of `KeyBinding[]` entries with labeled key boxes.
+
+#### @termuijs/store
+
+- **`batch(fn)`** - Groups multiple `setState` calls into one reconciler pass. Flushes all queued updates in a single microtask.
+
+#### @termuijs/tss
+
+- **`ThemeTokens` type** - `Record<string, string>` keyed by CSS variable names.
+- **Named token exports** - `draculaTheme`, `nordTheme`, `catppuccinTheme`, `monokaiTheme`, `solarizedTheme`, `tokyoNightTheme`, `oneDarkTheme`. Use these directly without the TSS engine.
+- **`tokensToTSS(name, tokens)`** - Converts a token object to a TSS `@theme` block string. Bridge between the token format and the engine format.
+- **`AutoThemeProvider`** - Detects terminal background color via OSC query and selects the closest theme. Accepts a `fallback` prop. Skips detection when `caps.color` is false.
+- **`useTheme()`** - `{ theme, setTheme, availableThemes }`. Switch themes at runtime from any component.
+
+#### @termuijs/data
+
+- **Reactive hooks** - `useCpu(ms?)`, `useMemory(ms?)`, `useDisk(ms?)`, `useNetwork(ms?)`, `useTopProcesses(n, ms?)`, `useSystemInfo()`, `useHttpHealth(urls, ms?)`. All hooks register interval cleanup on unmount.
+
+#### @termuijs/motion
+
+- **`caps.motion` guard** - `animateSpring` and `transition` skip to their final value immediately when `NO_MOTION=1`. No animation loop runs.
+- **Timer pool** - Animations now use `timerPoolSubscribe` instead of raw `setTimeout`. Multiple simultaneous animations share one underlying timer.
+
+#### @termuijs/testing
+
+- **`waitFor(fn, opts?)`** - Polls `fn()` until it does not throw. Default `{ timeout: 1000, interval: 10 }`. Use for async state assertions.
+- **`renderToString()`** - Returns an ANSI-free flat string snapshot of the current widget state.
+
+#### @termuijs/quick
+
+- New builders: `jsonView`, `diffView`, `streamingText`, `chatMessage`, `toolCall`, `commandPalette`, `multiProgress`, `grid`.
+- Re-exports: `useKeymap`, `useMotion`, `useTheme`, `useNotifications`, `useAsync`, `useCpu`, `useMemory`, `useDisk`, `useNetwork`, `useTopProcesses`, `useSystemInfo`, `useHttpHealth`.
+- App root now wraps in `AutoThemeProvider` and `ErrorBoundary` automatically.
+
+#### @termuijs/router
+
+- Route components are now wrapped in `ErrorBoundary`. A screen crash shows an error UI instead of killing the app.
+- `push()`, `replace()`, and `back()` call `unmountAll()` before mounting the new screen. No stale fibers remain after navigation.
+
+#### @termuijs/dev-server
+
+- Graceful reload: sends a `reload` IPC message to the child process before killing it. The child calls `unmountAll()` and exits cleanly within a 200ms grace period.
+- Devtools inspector now supports all new widget types: Grid, Skeleton, JSONView, DiffView, CommandPalette, NotificationCenter, StreamingText, ChatMessage, ToolCall.
+
+#### create-termui-app
+
+- All four templates updated to use `useKeymap`, `AutoThemeProvider`, and `ErrorBoundary`.
+- Dashboard template uses Grid layout and `useNotifications`.
+- Interactive tool template uses `prompt.confirm` for destructive actions and `useMotion` guards around animations.
+
+### Fixed
+
+- **`@termuijs/core` App.ts** - `requestRender()` now checks `isDirty` before running the full layout pass. Frames with no state changes no longer trigger layout computation.
+- **`@termuijs/core` Terminal.ts** - Changed `process.once('uncaughtException', ...)` to `process.on(...)`. The terminal now restores correctly after any uncaught exception, not only the first one.
+- **`@termuijs/widgets` Spinner** - No longer uses a manual `tick` interval. Uses `timerPoolSubscribe` and checks `caps.motion`. Static character output when `NO_MOTION=1`.
+- **`@termuijs/widgets` Sparkline** - Falls back to numeric ASCII characters (`1`-`8`) when `NO_UNICODE=1`. Previously output garbled unicode block elements in non-unicode terminals.
+- **`@termuijs/widgets` List, VirtualList** - Selection prefix `'▸ '` now falls back to `'> '` when `NO_UNICODE=1`.
+- **`@termuijs/widgets` Gauge** - Fill and empty characters fall back to ASCII when `NO_UNICODE=1`.
+- **`@termuijs/widgets` StreamingText** - Guards `timerPoolSubscribe` call with `caps.motion` check.
+- **`@termuijs/ui` Select, Tabs, Modal, Toast, MultiSelect, Tree, CommandPalette** - All unicode and emoji characters now have `caps.unicode` guards with ASCII fallbacks. Previously output garbled characters in CI environments and non-unicode terminals.
+- **`@termuijs/data` http.ts** - `_latencyHistory` now capped at 100 entries per URL. Previously grew without bound.
+- **`@termuijs/testing` `rerender()`** - Now uses `reRenderComponent()` internally to preserve fiber state. Previously discarded hook state on every re-render call.
+- **`@termuijs/testing` `fireKey()`** - Now uses `collectInputHandlers()` to walk the full fiber tree. Previously only dispatched to the root component's handlers.
+
+### Changed
+
+- **`@termuijs/tss`** - Documentation updated from "five built-in themes" to six (Solarized was present but unlisted).
+- **All packages** - README files updated to document new features.
+- **Website** - 15 new documentation pages added. 9 existing pages updated. All new features are now documented.
+- **Tests** - 242 new tests across all packages. Total: 598 tests, all passing.
+
+---
+
+## [0.1.3] - 2026-04-07
 
 ### Added
 

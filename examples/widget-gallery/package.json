@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "TermUI Widget Gallery — Sprint 1.5 + Sprint 2 widgets, themes, grid, skeleton, notifications",
+  "description": "TermUI Widget Gallery — themes, grid, skeleton, notifications",
   "scripts": {
     "start": "npx tsx src/index.ts",
     "build": "echo 'no build needed'"

@@ -236,6 +236,7 @@ export class Screen {
      * Clear the back buffer to all empty cells.
      */
     clear(): void {
+        this._clipStack = [];
         for (let r = 0; r < this._rows; r++) {
             for (let c = 0; c < this._cols; c++) {
                 resetCell(this.back[r][c]);

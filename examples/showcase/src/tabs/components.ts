@@ -7,7 +7,8 @@
 // layout positions (height:1), we supplement them with explicit
 // Text indicators that make state changes clearly visible.
 
-import { Widget, Box, Text } from '@termuijs/widgets';
+import { Widget, Box, Text, CommandPalette } from '@termuijs/widgets';
+import type { Command } from '@termuijs/widgets';
 import { Select, MultiSelect, Tree, Divider } from '@termuijs/ui';
 import type { Screen } from '@termuijs/core';
 
@@ -60,18 +61,22 @@ export class ComponentsTab extends Widget {
     private _select: Select;
     private _multiSelect: MultiSelect;
     private _tree: Tree;
-    private _focusedWidget: 'select' | 'multiselect' | 'tree' = 'select';
+    private _focusedWidget: 'select' | 'multiselect' | 'tree' | 'commandpalette' = 'select';
 
     // Explicit visual state indicators (these are what make changes visible)
     private _selectIndicator: Text;
     private _multiIndicator: Text;
     private _treeIndicator: Text;
     private _focusIndicator: Text;
+    private _paletteIndicator: Text;
     private _selectItems: Text[];
     private _multiItems: Text[];
+    private _paletteItems: Text[];
     private _selectIndex = 0;
     private _multiIndex = 0;
     private _multiChecked: boolean[] = [false, false, false, false, false];
+    private _commandPalette: CommandPalette;
+    private _paletteIndex = 0;
 
     constructor() {
         super({ flexDirection: 'column', flexGrow: 1, gap: 0 });
@@ -172,8 +177,51 @@ export class ComponentsTab extends Widget {
         });
         rightPanel.addChild(this._treeIndicator);
 
+        // ── Far-Right Panel: CommandPalette ──
+        const PALETTE_COMMANDS: Command[] = [
+            { id: 'open', label: 'Open File', description: 'Ctrl+O', action: () => { this._paletteIndicator.setContent('  → Executed: Open File'); } },
+            { id: 'save', label: 'Save', description: 'Ctrl+S', action: () => { this._paletteIndicator.setContent('  → Executed: Save'); } },
+            { id: 'quit', label: 'Quit', description: 'Ctrl+Q', action: () => { this._paletteIndicator.setContent('  → Executed: Quit'); } },
+        ];
+
+        const palettePanel = new Box({
+            border: 'single', borderColor: { type: 'named', name: 'yellow' },
+            flexGrow: 1, padding: 1, flexDirection: 'column', gap: 0,
+        });
+
+        palettePanel.addChild(new Text('🎛  CommandPalette', {
+            height: 1, bold: true, fg: { type: 'named', name: 'yellow' },
+        }));
+        palettePanel.addChild(new Divider({ color: { type: 'named', name: 'brightBlack' } }));
+
+        this._commandPalette = new CommandPalette(
+            { commands: PALETTE_COMMANDS, placeholder: 'Search commands...' },
+            { flexGrow: 1 },
+        );
+        this._commandPalette.open();
+
+        // Manual palette list rendering for explicit visual feedback
+        this._paletteItems = PALETTE_COMMANDS.map((cmd, i) => {
+            const isActive = i === 0;
+            return new Text(
+                `  ${isActive ? '▸ ' : '  '}${cmd.label}${cmd.description ? '   ' + cmd.description : ''}`,
+                {
+                    height: 1,
+                    fg: isActive ? { type: 'named', name: 'yellow' } : { type: 'named', name: 'white' },
+                    bold: isActive,
+                },
+            );
+        });
+        for (const item of this._paletteItems) palettePanel.addChild(item);
+
+        this._paletteIndicator = new Text('  → ↑↓ Navigate  •  Enter Execute', {
+            height: 1, fg: { type: 'named', name: 'brightBlack' },
+        });
+        palettePanel.addChild(this._paletteIndicator);
+
         mainRow.addChild(leftPanel);
         mainRow.addChild(rightPanel);
+        mainRow.addChild(palettePanel);
 
         this.addChild(header);
         this.addChild(this._focusIndicator);
@@ -182,12 +230,13 @@ export class ComponentsTab extends Widget {
         // Initial visual state
         this._updateSelectVisuals();
         this._updateMultiVisuals();
+        this._updatePaletteVisuals();
     }
 
     handleKey(key: string): void {
         // Tab to cycle focus between widgets
         if (key === 'tab') {
-            const order: Array<'select' | 'multiselect' | 'tree'> = ['select', 'multiselect', 'tree'];
+            const order: Array<'select' | 'multiselect' | 'tree' | 'commandpalette'> = ['select', 'multiselect', 'tree', 'commandpalette'];
             const idx = order.indexOf(this._focusedWidget);
             this._focusedWidget = order[(idx + 1) % order.length];
             this._updateFocusIndicator();
@@ -232,14 +281,39 @@ export class ComponentsTab extends Widget {
                 else if (key === 'left' || key === 'right' || key === 'space') this._tree.toggleExpand();
                 else if (key === 'enter') this._tree.confirm();
                 break;
+            case 'commandpalette':
+                if (key === 'up' && this._paletteIndex > 0) {
+                    this._paletteIndex--;
+                    this._updatePaletteVisuals();
+                } else if (key === 'down' && this._paletteIndex < 2) {
+                    this._paletteIndex++;
+                    this._updatePaletteVisuals();
+                } else if (key === 'enter') {
+                    this._commandPalette.handleKey('Enter');
+                }
+                break;
         }
     }
 
     private _updateFocusIndicator(): void {
-        const labels = { select: 'SELECT', multiselect: 'MULTI-SELECT', tree: 'TREE' };
+        const labels: Record<string, string> = { select: 'SELECT', multiselect: 'MULTI-SELECT', tree: 'TREE', commandpalette: 'COMMAND PALETTE' };
         this._focusIndicator.setContent(
             `  ⊕ Focus: [${labels[this._focusedWidget]}]   Tab to switch  •  ↑↓ Navigate  •  Space Toggle  •  Enter Confirm`,
         );
+    }
+
+    private _updatePaletteVisuals(): void {
+        const PALETTE_LABELS = ['Open File', 'Save', 'Quit'];
+        const PALETTE_SHORTCUTS = ['Ctrl+O', 'Ctrl+S', 'Ctrl+Q'];
+        for (let i = 0; i < this._paletteItems.length; i++) {
+            const isActive = i === this._paletteIndex;
+            this._paletteItems[i].setContent(`  ${isActive ? '▸ ' : '  '}${PALETTE_LABELS[i]}   ${PALETTE_SHORTCUTS[i]}`);
+            this._paletteItems[i].setStyle({
+                fg: isActive ? { type: 'named', name: 'yellow' } : { type: 'named', name: 'white' },
+                bold: isActive,
+            });
+        }
+        this._paletteIndicator.setContent('  → ↑↓ Navigate  •  Enter Execute');
     }
 
     private _updateSelectVisuals(): void {
@@ -276,7 +350,7 @@ export class ComponentsTab extends Widget {
     }
 
     getDebugState(): string {
-        return `focus=${this._focusedWidget} selectIdx=${this._selectIndex} multiIdx=${this._multiIndex} checked=${this._multiChecked.map(c => c ? '1' : '0').join('')}`;
+        return `focus=${this._focusedWidget} selectIdx=${this._selectIndex} multiIdx=${this._multiIndex} checked=${this._multiChecked.map(c => c ? '1' : '0').join('')} paletteIdx=${this._paletteIndex}`;
     }
 
     protected _renderSelf(_screen: Screen): void { /* children handle rendering */ }

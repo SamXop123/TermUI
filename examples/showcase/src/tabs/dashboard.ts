@@ -3,8 +3,8 @@
 // ─────────────────────────────────────────────────────
 
 import { Widget } from '@termuijs/widgets';
-import { Box, Text, ProgressBar, Spinner, Table, Sparkline, StatusIndicator } from '@termuijs/widgets';
-import type { Screen } from '@termuijs/core';
+import { Box, Text, ProgressBar, Spinner, Table, Sparkline, StatusIndicator, StatusMessage, StreamingText } from '@termuijs/widgets';
+import { type Screen, caps } from '@termuijs/core';
 
 export class DashboardTab extends Widget {
     private _cpuGauge: ProgressBar;
@@ -16,6 +16,8 @@ export class DashboardTab extends Widget {
     private _statusIndicators: StatusIndicator[];
     private _cpuHistory: number[] = [];
     private _progress = 0.3;
+    private _statusMsg: StatusMessage;
+    private _streamingText: StreamingText;
 
     constructor() {
         super({ flexDirection: 'column', flexGrow: 1, gap: 1 });
@@ -59,6 +61,21 @@ export class DashboardTab extends Widget {
         this._spinner = new Spinner({ height: 1 }, { spinner: 'dots', label: 'Collecting metrics...', color: { type: 'named', name: 'magenta' } });
         leftPanel.addChild(this._spinner);
 
+        // ── StatusMessage widget ──
+        this._statusMsg = new StatusMessage(
+            'System monitoring active',
+            { height: 1 },
+            { variant: 'success' },
+        );
+        leftPanel.addChild(this._statusMsg);
+
+        // ── StreamingText widget ──
+        this._streamingText = new StreamingText(
+            { text: 'TermUI — Real-time system monitor powered by @termuijs/data', speed: 3 },
+            { height: 1, fg: { type: 'named', name: 'cyan' } },
+        );
+        leftPanel.addChild(this._streamingText);
+
         this._statusIndicators = [
             new StatusIndicator('API Server', true, { height: 1 }),
             new StatusIndicator('Database', true, { height: 1 }),
@@ -100,7 +117,10 @@ export class DashboardTab extends Widget {
     }
 
     tick(dt: number): void {
-        this._spinner.tick(dt);
+        if (caps.motion) {
+            this._spinner.tick(dt);
+        }
+        this._streamingText.tick();
         // Simulate CPU history
         const cpuVal = 30 + Math.sin(Date.now() / 2000) * 20 + Math.random() * 10;
         this._cpuHistory.push(cpuVal);

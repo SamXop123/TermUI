@@ -1,6 +1,6 @@
 # @termuijs/jsx
 
-Write terminal apps with JSX and React-style hooks. This package is the TSX runtime for TermUI. It handles the component lifecycle, reconciliation, and hooks like `useState`, `useEffect`, `useContext`, `useAsync`, and `memo()`.
+Write terminal apps with JSX and React-style hooks. This package is the TSX runtime for TermUI. It handles component lifecycle, reconciliation, hooks, focus management, and error handling.
 
 ## Install
 
@@ -57,13 +57,131 @@ render(<App />)
 | `useEffect` | Side effects with cleanup. Runs after render, re-runs when deps change |
 | `useRef` | Mutable ref that persists across renders without causing re-renders |
 | `useInput` | Register a keyboard handler for this component |
+| `useKeymap` | Declare named key bindings. Cleaner than `useInput` for multiple keys |
 | `useInterval` | Set an interval that auto-cleans on unmount |
-| `useContext` | Read a value from the nearest `Provider` ancestor |
+| `useContext` | Read a value from the nearest Provider ancestor |
 | `useAsync` | Load async data with built-in loading, error, and refetch tracking |
+| `useMotion` | Read motion preference. Returns `{ prefersReducedMotion }` |
+
+## useKeymap
+
+Declare key bindings as a map. More readable than chained if-statements. All bindings from multiple `useKeymap` calls in the same component are additive.
+
+```tsx
+import { useKeymap } from '@termuijs/jsx'
+
+function App() {
+    useKeymap({
+        'ctrl+c': () => process.exit(0),
+        'q':      () => goBack(),
+        '/':      () => openSearch(),
+        'ctrl+s': () => save(),
+    })
+
+    // Bindings with modifier access
+    useKeymap({
+        'ctrl+k': (e) => console.log('ctrl+k pressed', e),
+    })
+
+    return <Box>...</Box>
+}
+```
+
+Modifier syntax: `ctrl+`, `alt+`, `shift+`, `meta+`. Combine them: `ctrl+shift+k`.
+
+## useMotion
+
+Read the user's motion preference before starting animations.
+
+```tsx
+import { useMotion } from '@termuijs/jsx'
+import { timerPoolSubscribe } from '@termuijs/core'
+
+function AnimatedWidget() {
+    const { prefersReducedMotion } = useMotion()
+
+    useEffect(() => {
+        if (prefersReducedMotion) return
+        return timerPoolSubscribe(16, () => tick())
+    }, [prefersReducedMotion])
+
+    return <Box>...</Box>
+}
+```
+
+## ErrorBoundary
+
+Wrap any subtree. Errors show a fallback instead of crashing the app.
+
+```tsx
+import { ErrorBoundary } from '@termuijs/jsx'
+
+function App() {
+    return (
+        <ErrorBoundary
+            fallback={(err) => (
+                <Box border="single" borderColor="red">
+                    <Text color="red">Error: {err.message}</Text>
+                </Box>
+            )}
+            onError={(err) => logError(err)}
+        >
+            <Dashboard />
+        </ErrorBoundary>
+    )
+}
+```
+
+Place one at the app root and one around each major section. Call `boundary.reset()` to clear the error state and re-render children.
+
+## Focus management
+
+Four hooks for building keyboard-accessible interfaces:
+
+```tsx
+import {
+    useFocusManager,
+    useFocus,
+    useFocusTrap,
+    useKeyboardNavigation,
+} from '@termuijs/jsx'
+
+// App root: provides the focus context
+function App() {
+    const { FocusContext, focus, blur, focused } = useFocusManager()
+    return (
+        <FocusContext.Provider value={{ focus, blur, focused }}>
+            <Screen />
+        </FocusContext.Provider>
+    )
+}
+
+// Individual widget: reads focus state
+function Input({ id }) {
+    const { isFocused, focus } = useFocus({ id, autoFocus: false })
+    return <Box borderColor={isFocused ? 'cyan' : 'white'}>...</Box>
+}
+
+// Modal: traps Tab/Shift+Tab within a set of IDs
+function Modal({ fieldIds }) {
+    useFocusTrap(fieldIds)
+    return <Box>...</Box>
+}
+
+// List: standard arrow key navigation
+function List({ items }) {
+    const { selectedIndex, select } = useKeyboardNavigation({
+        items,
+        loop: true,
+        pageSize: 10,
+    })
+    return <Box>...</Box>
+}
+```
 
 ## Context
 
-Share state across the component tree without passing props through every level.
+Share state across the component tree without prop drilling.
 
 ```tsx
 import { createContext, useContext } from '@termuijs/jsx'
@@ -86,7 +204,7 @@ function StatusBar() {
 
 ## memo()
 
-Skip re-renders when props haven't changed. Uses shallow comparison by default, or pass your own equality function.
+Skip re-renders when props have not changed.
 
 ```tsx
 import { memo } from '@termuijs/jsx'
@@ -94,38 +212,11 @@ import { memo } from '@termuijs/jsx'
 const Row = memo(function Row({ name, cpu }) {
     return <Text>{name}: {cpu}%</Text>
 })
-
-// With custom comparison
-const Item = memo(ItemComponent, (prev, next) => prev.id === next.id)
 ```
 
-## useAsync
+## Fiber identity reuse
 
-Load async data without managing loading/error state yourself.
-
-```tsx
-import { useAsync } from '@termuijs/jsx'
-
-function ProcessList() {
-    const { data, loading, error, refetch } = useAsync(
-        () => fetchProcesses(),
-        []
-    )
-
-    if (loading) return <Spinner label="Loading..." />
-    if (error) return <Text color="red">{error.message}</Text>
-    return <Text>Found {data.length} processes</Text>
-}
-```
-
-## Batched updates
-
-Multiple `setState` calls in the same tick get batched into one render. This happens automatically via `queueMicrotask`, so three state updates in one event handler produce one re-render, not three.
-
-## How it works
-
-The JSX runtime converts TSX elements into TermUI widget trees. Each functional component gets a Fiber that tracks its hook state. When state changes, the reconciler diffs the old and new trees and applies the minimum set of updates to the screen. Context values propagate by walking up the Fiber parent chain.
-
+The reconciler reuses existing fiber instances when a component type and its position in the tree both match. Hook state (`useState`, `useRef`) survives parent re-renders. Animated components like `Spinner` and `Skeleton` no longer reset when a sibling updates.
 
 ## Documentation
 

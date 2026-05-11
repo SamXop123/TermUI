@@ -10,6 +10,7 @@
     },
     "dependencies": {
         "@termuijs/core": "workspace:*",
+        "@termuijs/data": "workspace:*",
         "@termuijs/widgets": "workspace:*"
     },
     "devDependencies": {

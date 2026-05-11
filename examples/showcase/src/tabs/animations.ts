@@ -4,7 +4,7 @@
 
 import { Widget, Box, Text, ProgressBar } from '@termuijs/widgets';
 import { SPRING_PRESETS, stepSpring, type SpringState, type SpringConfig } from '@termuijs/motion';
-import type { Screen } from '@termuijs/core';
+import { type Screen, caps } from '@termuijs/core';
 
 interface AnimDemo {
     name: string;
@@ -74,10 +74,19 @@ export class AnimationsTab extends Widget {
             { height: 1, fg: { type: 'named', name: 'brightBlack' } },
         );
 
+        // ── NO_MOTION fallback banner ──
+        const noMotionBanner = new Text(
+            '  ⚠  Animations disabled (NO_MOTION=1) — static values shown',
+            { height: 1, fg: { type: 'named', name: 'yellow' }, bold: true },
+        );
+
         this.addChild(header);
         this.addChild(springBox);
         this.addChild(typewriterBox);
         this.addChild(pulseBox);
+        if (!caps.motion) {
+            this.addChild(noMotionBanner);
+        }
         this.addChild(helpText);
     }
 
@@ -90,6 +99,8 @@ export class AnimationsTab extends Widget {
     }
 
     tick(dt: number): void {
+        if (!caps.motion) return;
+
         this._elapsed += dt;
         const dtSec = dt / 1000;
 

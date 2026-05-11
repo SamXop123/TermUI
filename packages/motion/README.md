@@ -1,6 +1,8 @@
 # @termuijs/motion
 
-Animations for terminal UIs. Spring physics for things that should feel physical, easing curves for things that should feel timed.
+Animations for terminal UIs. Spring physics for things that should feel physical; easing curves for things that should feel timed.
+
+All animations skip to their final value when `NO_MOTION=1` is set. This makes your app work correctly in CI, screen readers, and reduced-motion environments without any changes to your code.
 
 ## Install
 
@@ -12,22 +14,37 @@ Requires `@termuijs/core`.
 
 ## Springs
 
-Springs simulate real physics. You set stiffness, damping, and mass, then let the spring figure out the motion. The result feels natural because it is — Hooke's law, not a hand-tuned bezier.
+Springs simulate real physics. Set stiffness, damping, and mass; let the spring figure out the motion.
 
 ```typescript
-import { Spring } from '@termuijs/motion'
+import { animateSpring } from '@termuijs/motion'
 
-const spring = new Spring({
-    stiffness: 180,
-    damping: 12,
-    mass: 1,
-})
-
-// Animate from 0 to 100
-spring.start(0, 100, (value) => {
-    progressBar.setValue(value / 100)
-})
+animateSpring(
+    { from: 0, to: 100 },
+    (value) => progressBar.setValue(value / 100),
+    () => console.log('done'),
+)
 ```
+
+### Presets
+
+```typescript
+import { SPRING_PRESETS, animateSpring } from '@termuijs/motion'
+
+animateSpring(
+    { from: 0, to: 1, ...SPRING_PRESETS.stiff },
+    onFrame,
+)
+```
+
+| Preset | Feel |
+|--------|------|
+| `default` | Balanced. Good starting point |
+| `stiff` | Snappy, minimal bounce |
+| `gentle` | Slow, smooth glide |
+| `wobbly` | Bouncy, springy feel |
+| `slow` | Very slow, dramatic |
+| `molasses` | Extremely slow |
 
 ### Spring parameters
 
@@ -37,27 +54,33 @@ spring.start(0, 100, (value) => {
 | `damping` | How fast oscillation settles. Higher = less bounce | 26 |
 | `mass` | Inertia. Higher = slower to get moving | 1 |
 
-A stiffness of 300 with damping of 10 gives you a snappy bounce. Stiffness 100 with damping 30 gives you a slow, smooth glide. Experiment.
-
 ## Transitions
 
-For animations where you want a fixed duration rather than physics behavior:
+For animations with a fixed duration rather than physics behavior:
 
 ```typescript
 import { transition } from '@termuijs/motion'
 
-transition(widget, {
-    from: { x: 0, opacity: 0 },
-    to: { x: 20, opacity: 1 },
+transition({
+    from: 0,
+    to: 1,
     duration: 300,
     easing: 'ease-out',
+    onFrame: (v) => widget.setOpacity(v),
 })
 ```
 
-## How it works
+## NO_MOTION support
 
-The spring simulation runs per-frame. Each tick updates position and velocity using the spring equation. Once velocity drops below a threshold and position is close enough to the target, the spring settles and stops ticking. No wasted CPU on finished animations.
+When `NO_MOTION=1`, both `animateSpring` and `transition` call `onFrame` once with the final value, then call `onComplete`. No animation loop runs. This is automatic; you don't need to check the flag yourself.
 
+```bash
+NO_MOTION=1 node app.js  # All animations resolve instantly
+```
+
+## Timer pool integration
+
+Animations use `timerPoolSubscribe` from `@termuijs/core` instead of raw `setTimeout`. All active animations share one underlying 16ms timer, so CPU usage stays flat regardless of how many animations run simultaneously.
 
 ## Documentation
 

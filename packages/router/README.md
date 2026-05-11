@@ -21,7 +21,6 @@ router.register('home', homeWidget)
 router.register('settings', settingsWidget)
 router.register('help', helpWidget)
 
-// Navigate
 router.push('settings')
 router.back()
 
@@ -38,36 +37,50 @@ screens/
   settings.ts   -> /settings
   help.ts       -> /help
   users/
-    [id].ts     -> /users/[id]  (dynamic param)
+    [id].ts     -> /users/[id]
 ```
 
 ```typescript
 const router = new Router({ dir: './screens' })
 
-// Dynamic params are available in the screen
 router.push('/users/42')
-// screen receives { id: '42' } as params
+// Screen receives { id: '42' } as params
 ```
 
 ## Route params
 
-Dynamic segments use brackets in the filename. Params are typed and available inside the screen component.
+Dynamic segments use brackets in the filename. Params are available inside the screen component.
 
 ```typescript
 // screens/logs/[level].ts
 export default function LogScreen({ params }) {
-    const { level } = params  // 'error', 'warn', etc.
+    const { level } = params
     return <LogView filter={level} />
 }
 ```
 
+## Error handling
+
+Each routed screen is wrapped in an `ErrorBoundary`. If a screen component throws, a default error screen appears instead of crashing the app. Pass `errorFallback` to customize the error UI:
+
+```typescript
+const router = new Router({
+    dir: './screens',
+    errorFallback: (err) => (
+        <Box borderColor="red">
+            <Text color="red">Screen error: {err.message}</Text>
+        </Box>
+    ),
+})
+```
+
 ## History
 
-The router keeps a navigation stack. `push()` adds to it, `back()` pops. You can inspect the full stack with `router.history`.
+The router keeps a navigation stack. `push()` adds to it, `back()` pops. Inspect the full stack with `router.history`. Old screen fibers are unmounted before the new screen mounts, so there are no memory leaks from stale components.
 
 ## Guards
 
-Run a check before entering a route. Return `false` or a redirect path to prevent navigation.
+Run a check before entering a route. Return `false` or a redirect path to block navigation.
 
 ```typescript
 router.guard('/settings', () => {
@@ -75,7 +88,6 @@ router.guard('/settings', () => {
     return true
 })
 ```
-
 
 ## Documentation
 

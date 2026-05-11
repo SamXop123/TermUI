@@ -9,7 +9,9 @@
         "build": "echo 'no build needed'"
     },
     "dependencies": {
-        "@termuijs/quick": "workspace:*"
+        "@termuijs/core": "workspace:*",
+        "@termuijs/quick": "workspace:*",
+        "@termuijs/store": "workspace:*"
     },
     "devDependencies": {
         "tsx": "^4.21.0",

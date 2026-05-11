@@ -10,20 +10,24 @@
 // Run: cd examples/jsx-dashboard && pnpm start
 // ─────────────────────────────────────────────────────
 
-import { app, row, gauge, sparkline, table, text, status } from '@termuijs/quick';
+import { app, row, gauge, sparkline, table, text, status, multiProgress, streamingText } from '@termuijs/quick';
+import { caps } from '@termuijs/core';
 import { cpu, memory, disk, processes, system, network } from '@termuijs/data';
 
 // Keep a rolling history for sparklines
 const cpuHistory: number[] = [];
 const memHistory: number[] = [];
 
-app('⚡ JSX Dashboard')
+app(caps.unicode ? '⚡ JSX Dashboard' : '* JSX Dashboard')
     .rows(
         // Header
         text(() => `  ${system.hostname} • ${system.platform} • up ${system.uptime}`, {
             bold: true,
             color: { type: 'named', name: 'cyan' },
         }),
+
+        // Streaming intro text
+        streamingText({ text: 'Live system metrics. Refreshing every second.', speed: 0 }),
 
         // Gauges
         row(
@@ -42,10 +46,16 @@ app('⚡ JSX Dashboard')
             gauge('DSK', () => disk.percent / 100, { color: { type: 'named', name: 'magenta' } }),
         ),
 
+        // Memory breakdown
+        multiProgress([
+            { label: 'Used', value: () => memory.raw.used / memory.raw.total },
+            { label: 'Free', value: () => memory.raw.free / memory.raw.total },
+        ]),
+
         // Sparklines
         row(
-            sparkline('CPU ▸', () => [...cpuHistory], { color: { type: 'named', name: 'green' } }),
-            sparkline('MEM ▸', () => [...memHistory], { color: { type: 'named', name: 'yellow' } }),
+            sparkline(caps.unicode ? 'CPU ▸' : 'CPU >', () => [...cpuHistory], { color: { type: 'named', name: 'green' } }),
+            sparkline(caps.unicode ? 'MEM ▸' : 'MEM >', () => [...memHistory], { color: { type: 'named', name: 'yellow' } }),
         ),
 
         // Process table

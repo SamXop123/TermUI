@@ -453,12 +453,18 @@ export function commandPalette(
 
 /**
  * Create a multi-bar progress widget.
+ * Items can be a static array or a reactive getter (callback).
  */
 export function multiProgress(
-    items: ProgressItem[],
+    items: ProgressItem[] | Reactive<ProgressItem[]>,
     opts: Omit<MultiProgressOptions, 'items'> = {},
 ): Widget {
-    return new MultiProgressWidget({ items, ...opts }, { flexGrow: 1 });
+    const initialItems = resolve(items);
+    const mp = new MultiProgressWidget({ items: initialItems, ...opts }, { flexGrow: 1 });
+    if (typeof items === 'function') {
+        (mp as any).__reactiveMultiItems = items;
+    }
+    return mp;
 }
 
 // ── Re-export types from @termuijs/widgets for convenience ──

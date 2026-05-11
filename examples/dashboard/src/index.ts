@@ -9,12 +9,17 @@
 // - Text rendering with alignment
 // - ProgressBar with dynamic updates
 // - Spinner animation
-// - Table with data
+// - Table with live process data
+// - Card layout container with title
+// - StatusMessage for status indicators
+// - StreamingText for typewriter-style display
+// - Real system metrics via @termuijs/data
+// - caps guards for unicode/motion capability detection
 // - Keyboard input handling (q to quit, r to reset)
 // - Graceful CI/pipe fallback
 //
 
-import { App } from '@termuijs/core';
+import { App, caps } from '@termuijs/core';
 import {
     Box,
     Text,
@@ -22,7 +27,11 @@ import {
     Spinner,
     Table,
     Widget,
+    Card,
+    StatusMessage,
+    StreamingText,
 } from '@termuijs/widgets';
+import { cpu, memory, disk, processes } from '@termuijs/data';
 import type { Screen, KeyEvent } from '@termuijs/core';
 
 // ── Dashboard Root Widget ────────────────────────────
@@ -31,10 +40,13 @@ class Dashboard extends Widget {
     private _title: Text;
     private _container: Box;
     private _statusBar: Text;
-    private _progressBar: ProgressBar;
+    private _cpuBar: ProgressBar;
+    private _memBar: ProgressBar;
+    private _diskBar: ProgressBar;
     private _spinner: Spinner;
     private _table: Table;
-    private _progress = 0;
+    private _statusMsg: StatusMessage;
+    private _streamingText: StreamingText;
 
     constructor() {
         super({
@@ -42,11 +54,28 @@ class Dashboard extends Widget {
         });
 
         // ── Header ──
-        this._title = new Text('⚡ TermUI Dashboard', {
-            bold: true,
-            fg: { type: 'named', name: 'cyan' },
-            height: 1,
-        }, { align: 'center' });
+        this._title = new Text(
+            `${caps.unicode ? '⚡' : '*'} TermUI Dashboard`,
+            {
+                bold: true,
+                fg: { type: 'named', name: 'cyan' },
+                height: 1,
+            },
+            { align: 'center' },
+        );
+
+        // StreamingText beneath header — typewriter intro message
+        this._streamingText = new StreamingText(
+            { text: 'Dashboard loaded. Monitoring active.', speed: 4 },
+            { height: 1, fg: { type: 'named', name: 'brightBlack' } },
+        );
+
+        // StatusMessage — live metrics indicator
+        this._statusMsg = new StatusMessage(
+            'Live system metrics',
+            { height: 1 },
+            { variant: 'info' },
+        );
 
         // ── Main container ──
         this._container = new Box({
@@ -55,74 +84,120 @@ class Dashboard extends Widget {
             gap: 1,
         });
 
-        // ── Left panel: Stats ──
-        const leftPanel = new Box({
-            border: 'round',
-            borderColor: { type: 'named', name: 'blue' },
-            flexGrow: 1,
-            padding: 1,
-            flexDirection: 'column',
-            gap: 1,
-        });
+        // ── Left panel: Resources Card wrapping CPU/Memory/Disk gauges ──
+        const resourceCard = new Card(
+            {
+                flexGrow: 1,
+                flexDirection: 'column',
+                gap: 1,
+            },
+            {
+                title: 'Resources',
+                borderColor: { type: 'named', name: 'blue' },
+            },
+        );
 
-        const statsTitle = new Text('📊 System Monitor', {
-            bold: true,
-            fg: { type: 'named', name: 'yellow' },
-            height: 1,
-        });
+        const cpuLabel = new Text(
+            `${caps.unicode ? '▸' : '>'} CPU Usage:`,
+            { height: 1, dim: true },
+        );
 
-        this._progressBar = new ProgressBar(
+        this._cpuBar = new ProgressBar(
             { height: 1 },
             {
-                value: 0.65,
+                value: cpu.percent / 100,
                 fillColor: { type: 'named', name: 'green' },
+                showLabel: true,
+            },
+        );
+
+        const memLabel = new Text(
+            `${caps.unicode ? '▸' : '>'} Memory:`,
+            { height: 1, dim: true },
+        );
+
+        this._memBar = new ProgressBar(
+            { height: 1 },
+            {
+                value: memory.percent / 100,
+                fillColor: { type: 'named', name: 'yellow' },
+                showLabel: true,
+            },
+        );
+
+        const diskLabel = new Text(
+            `${caps.unicode ? '▸' : '>'} Disk (/):`,
+            { height: 1, dim: true },
+        );
+
+        this._diskBar = new ProgressBar(
+            { height: 1 },
+            {
+                value: disk.percent / 100,
+                fillColor: { type: 'named', name: 'magenta' },
                 showLabel: true,
             },
         );
 
         this._spinner = new Spinner(
             { height: 1 },
-            { spinner: 'dots', label: 'Processing data...', color: { type: 'named', name: 'magenta' } },
+            {
+                spinner: 'dots',
+                label: 'Refreshing...',
+                color: { type: 'named', name: 'cyan' },
+            },
         );
 
-        leftPanel.addChild(statsTitle);
-        leftPanel.addChild(new Text('CPU Usage:', { height: 1, dim: true }));
-        leftPanel.addChild(this._progressBar);
-        leftPanel.addChild(this._spinner);
+        resourceCard.addChild(cpuLabel);
+        resourceCard.addChild(this._cpuBar);
+        resourceCard.addChild(memLabel);
+        resourceCard.addChild(this._memBar);
+        resourceCard.addChild(diskLabel);
+        resourceCard.addChild(this._diskBar);
+        resourceCard.addChild(this._spinner);
 
-        // ── Right panel: Table ──
-        const rightPanel = new Box({
-            border: 'single',
-            borderColor: { type: 'named', name: 'green' },
-            flexGrow: 2,
-            padding: 1,
-        });
+        // ── Right panel: Process Table Card ──
+        const processCard = new Card(
+            {
+                flexGrow: 2,
+                flexDirection: 'column',
+            },
+            {
+                title: 'Top Processes',
+                borderColor: { type: 'named', name: 'green' },
+            },
+        );
+
+        const topProcs = processes.top(8);
+        const tableRows = topProcs.map(p => ({
+            pid: String(p.pid),
+            name: p.name,
+            cpu: `${p.cpu.toFixed(1)}%`,
+            mem: `${p.mem.toFixed(1)}%`,
+            user: p.user,
+        }));
 
         this._table = new Table(
             [
-                { header: 'Service', key: 'name', width: 15 },
-                { header: 'Status', key: 'status', width: 10 },
-                { header: 'Uptime', key: 'uptime', align: 'right' },
+                { header: 'PID', key: 'pid', width: 7 },
+                { header: 'Name', key: 'name', width: 18 },
+                { header: 'CPU%', key: 'cpu', width: 7, align: 'right' },
+                { header: 'MEM%', key: 'mem', width: 7, align: 'right' },
+                { header: 'User', key: 'user', width: 10 },
             ],
-            [
-                { name: 'API Server', status: '● Online', uptime: '14d 6h' },
-                { name: 'Database', status: '● Online', uptime: '30d 2h' },
-                { name: 'Cache', status: '● Online', uptime: '7d 12h' },
-                { name: 'Worker', status: '○ Offline', uptime: '—' },
-                { name: 'Scheduler', status: '● Online', uptime: '3d 8h' },
-            ],
+            tableRows,
             { flexGrow: 1 },
             { stripe: true },
         );
 
-        rightPanel.addChild(this._table);
+        processCard.addChild(this._table);
 
-        this._container.addChild(leftPanel);
-        this._container.addChild(rightPanel);
+        this._container.addChild(resourceCard);
+        this._container.addChild(processCard);
 
         // ── Status bar ──
         this._statusBar = new Text(
-            '  q Quit  •  r Reset Progress  •  TermUI v0.1.0',
+            `  q Quit  ${caps.unicode ? '•' : '|'}  r Refresh  ${caps.unicode ? '•' : '|'}  TermUI v0.1.0`,
             {
                 height: 1,
                 fg: { type: 'named', name: 'brightBlack' },
@@ -130,8 +205,25 @@ class Dashboard extends Widget {
         );
 
         this.addChild(this._title);
+        this.addChild(this._streamingText);
+        this.addChild(this._statusMsg);
         this.addChild(this._container);
         this.addChild(this._statusBar);
+    }
+
+    /**
+     * Refresh process table with latest data from @termuijs/data.
+     */
+    private _refreshTable(): void {
+        const topProcs = processes.top(8);
+        const rows = topProcs.map(p => ({
+            pid: String(p.pid),
+            name: p.name,
+            cpu: `${p.cpu.toFixed(1)}%`,
+            mem: `${p.mem.toFixed(1)}%`,
+            user: p.user,
+        }));
+        this._table.setRows(rows);
     }
 
     /**
@@ -142,19 +234,36 @@ class Dashboard extends Widget {
             return false; // signal exit
         }
         if (event.key === 'r') {
-            this._progress = 0;
-            this._progressBar.setValue(0);
+            // Force a refresh of real metrics
+            this._cpuBar.setValue(cpu.percent / 100);
+            this._memBar.setValue(memory.percent / 100);
+            this._diskBar.setValue(disk.percent / 100);
+            this._refreshTable();
+            this._statusMsg.setMessage('Refreshed at ' + new Date().toLocaleTimeString());
+            this._statusMsg.setVariant('success');
         }
         return true;
     }
 
     /**
-     * Called on each tick to animate the spinner and progress.
+     * Called on each tick to animate widgets and pull live metrics.
      */
     tick(deltaMs: number): void {
-        this._spinner.tick(deltaMs);
-        this._progress = Math.min(1, this._progress + 0.002);
-        this._progressBar.setValue(this._progress);
+        // Only tick the spinner when motion is allowed
+        if (caps.motion) {
+            this._spinner.tick(deltaMs);
+        }
+
+        // Advance StreamingText typewriter reveal
+        this._streamingText.tick();
+
+        // Update progress bars from real system data
+        this._cpuBar.setValue(cpu.percent / 100);
+        this._memBar.setValue(memory.percent / 100);
+        this._diskBar.setValue(disk.percent / 100);
+
+        // Refresh process list every tick (data layer caches internally)
+        this._refreshTable();
     }
 
     protected _renderSelf(_screen: Screen): void {
@@ -182,7 +291,7 @@ async function main() {
         app.requestRender();
     });
 
-    // Animation loop — spin spinner + grow progress bar
+    // Animation loop — tick spinner, update metrics, stream text
     let lastTick = Date.now();
     const tickInterval = setInterval(() => {
         const now = Date.now();

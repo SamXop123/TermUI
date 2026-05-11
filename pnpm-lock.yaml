@@ -32,6 +32,9 @@ importers:
       '@termuijs/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@termuijs/data':
+        specifier: workspace:*
+        version: link:../../packages/data
       '@termuijs/widgets':
         specifier: workspace:*
         version: link:../../packages/widgets
@@ -42,6 +45,9 @@ importers:
 
   examples/jsx-dashboard:
     dependencies:
+      '@termuijs/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@termuijs/data':
         specifier: workspace:*
         version: link:../../packages/data
@@ -86,6 +92,9 @@ importers:
 
   examples/system-monitor:
     dependencies:
+      '@termuijs/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@termuijs/data':
         specifier: workspace:*
         version: link:../../packages/data
@@ -102,9 +111,15 @@ importers:
 
   examples/todo-app:
     dependencies:
+      '@termuijs/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@termuijs/quick':
         specifier: workspace:*
         version: link:../../packages/quick
+      '@termuijs/store':
+        specifier: workspace:*
+        version: link:../../packages/store
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -238,6 +253,9 @@ importers:
       '@termuijs/tss':
         specifier: workspace:*
         version: link:../tss
+      '@termuijs/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@termuijs/widgets':
         specifier: workspace:*
         version: link:../widgets

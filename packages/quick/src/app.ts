@@ -17,7 +17,9 @@ import {
     BarChart,
     ProgressBar,
     Tree,
+    MultiProgress,
 } from '@termuijs/widgets';
+import type { ProgressItem } from '@termuijs/widgets';
 import type { LayoutChild } from './layout.js';
 import { toWidget } from './layout.js';
 import { resolve, type Reactive } from './reactive.js';
@@ -465,6 +467,12 @@ export class AppBuilder {
             // Tree — reactive nodes (if data changes)
             if (widget instanceof Tree && w.__reactiveTreeNodes) {
                 widget.setNodes(resolve(w.__reactiveTreeNodes));
+            }
+
+            // MultiProgress — reactive items
+            if (widget instanceof MultiProgress && w.__reactiveMultiItems) {
+                const items: ProgressItem[] = resolve(w.__reactiveMultiItems);
+                widget.setItems(items);
             }
 
             // Recurse into children

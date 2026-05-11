@@ -4,7 +4,7 @@
 
 import { Widget, Box, Text } from '@termuijs/widgets';
 import { Divider } from '@termuijs/ui';
-import { ThemeEngine, getAllBuiltinThemes, getBuiltinThemeNames } from '@termuijs/tss';
+import { ThemeEngine, getAllBuiltinThemes, getBuiltinThemeNames, draculaTheme, nordTheme, tokensToTSS } from '@termuijs/tss';
 import { type Screen, styleToCellAttrs } from '@termuijs/core';
 
 const THEME_NAMES = getBuiltinThemeNames();
@@ -58,6 +58,17 @@ export class ThemingTab extends Widget {
         rightPanel.addChild(new Text('      --primary: #ff00ff;', { height: 1, fg: { type: 'named', name: 'magenta' } }));
         rightPanel.addChild(new Text('      --accent: #ff6b6b;', { height: 1, fg: { type: 'named', name: 'red' } }));
         rightPanel.addChild(new Text('  }', { height: 1, fg: { type: 'named', name: 'cyan' } }));
+
+        // ── Token bridge: tokensToTSS() preview ──
+        rightPanel.addChild(new Divider({ title: 'Token bridge: tokensToTSS()', color: { type: 'named', name: 'brightBlack' } }));
+        const draculaTSSPreview = tokensToTSS('dracula', draculaTheme).split('\n').slice(0, 4).join('\n');
+        for (const line of draculaTSSPreview.split('\n')) {
+            rightPanel.addChild(new Text(`  ${line}`, { height: 1, fg: { type: 'named', name: 'yellow' } }));
+        }
+        const nordTSSPreview = tokensToTSS('nord', nordTheme).split('\n').slice(1, 3).join('\n');
+        for (const line of nordTSSPreview.split('\n')) {
+            rightPanel.addChild(new Text(`  ${line}`, { height: 1, fg: { type: 'named', name: 'blue' } }));
+        }
 
         mainRow.addChild(leftPanel);
         mainRow.addChild(rightPanel);

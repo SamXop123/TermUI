@@ -1,6 +1,6 @@
 # @termuijs/tss
 
-Terminal Style Sheets. A CSS-like styling system for terminal apps with variables, selectors, and six built-in themes.
+Terminal Style Sheets. A CSS-like styling system for terminal apps with variables, selectors, theme tokens, and an automatic theme provider.
 
 ## Install
 
@@ -14,9 +14,19 @@ Requires `@termuijs/core` and `@termuijs/widgets`.
 
 Six themes ship ready to use: Default, Cyberpunk, Nord, Dracula, Catppuccin, and Solarized.
 
+```typescript
+import { getBuiltinThemeNames, getBuiltinTheme, TSSEngine } from '@termuijs/tss'
+
+getBuiltinThemeNames()
+// ['default', 'cyberpunk', 'nord', 'dracula', 'catppuccin', 'solarized']
+
+const engine = new TSSEngine()
+engine.load(getBuiltinTheme('nord'))
+```
+
 ## TSS syntax
 
-TSS files look like CSS but target terminal widgets instead of HTML elements:
+TSS files look like CSS but target terminal widgets:
 
 ```
 @theme cyberpunk {
@@ -41,37 +51,80 @@ TSS files look like CSS but target terminal widgets instead of HTML elements:
 }
 ```
 
-Variables start with `$`. Selectors target widget type names and class names. Properties map to TermUI style attributes.
+## useTheme
 
-## Usage
+Switch themes at runtime from any component:
 
 ```typescript
-import { TSSEngine, getBuiltinTheme, getBuiltinThemeNames } from '@termuijs/tss'
+import { useTheme } from '@termuijs/tss'
 
-// List available themes
-const names = getBuiltinThemeNames()
-// ['default', 'cyberpunk', 'nord', 'dracula', 'catppuccin']
+function ThemeSwitcher() {
+    const { theme, setTheme, availableThemes } = useTheme()
 
-// Load and parse a theme
-const source = getBuiltinTheme('cyberpunk')
+    useKeymap({
+        't': () => {
+            const idx = availableThemes.indexOf(theme)
+            setTheme(availableThemes[(idx + 1) % availableThemes.length])
+        },
+    })
+
+    return <Text>Theme: {theme}</Text>
+}
+```
+
+## AutoThemeProvider
+
+Detects the terminal background color via an OSC query and picks the closest theme automatically.
+
+```tsx
+import { AutoThemeProvider } from '@termuijs/tss'
+
+function App() {
+    return (
+        <AutoThemeProvider fallback="dracula">
+            <Dashboard />
+        </AutoThemeProvider>
+    )
+}
+```
+
+Set `NO_COLOR=1` to disable all ANSI color output. `AutoThemeProvider` checks `caps.color` before registering any terminal queries.
+
+## Theme tokens
+
+Named token objects are available for programmatic access without the TSS engine:
+
+```typescript
+import { draculaTheme, nordTheme, catppuccinTheme } from '@termuijs/tss'
+
+// Direct property access
+const primaryColor = nordTheme['--primary']
+const bgColor = draculaTheme['--bg']
+```
+
+Available token exports: `draculaTheme`, `nordTheme`, `catppuccinTheme`, `monokaiTheme`, `solarizedTheme`, `tokyoNightTheme`, `oneDarkTheme`.
+
+## tokensToTSS
+
+Convert a token object to a TSS `@theme` block string. Use this to load token-based themes into the engine.
+
+```typescript
+import { tokensToTSS, nordTheme, TSSEngine } from '@termuijs/tss'
+
+const tss = tokensToTSS('nord', nordTheme)
 const engine = new TSSEngine()
-engine.load(source)
-
-// Resolve styles for a widget type
-const styles = engine.resolve('Box')
-// { borderColor: '#ff00ff', background: '#0a0a0a' }
+engine.load(tss)
 ```
 
 ## How it works
 
 Three stages:
 
-1. **Tokenizer** breaks the `.tss` source into tokens
-2. **Parser** builds an AST from the token stream
-3. **Engine** resolves selectors against widget types and class names, substituting variables along the way
+1. Tokenizer breaks the `.tss` source into tokens.
+2. Parser builds an AST from the token stream.
+3. Engine resolves selectors against widget types and class names, substituting variables along the way.
 
 The engine caches resolved styles, so repeated lookups for the same selector are fast.
-
 
 ## Documentation
 

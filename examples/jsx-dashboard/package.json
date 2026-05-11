@@ -9,6 +9,7 @@
         "build": "echo 'no build needed'"
     },
     "dependencies": {
+        "@termuijs/core": "workspace:*",
         "@termuijs/jsx": "workspace:*",
         "@termuijs/widgets": "workspace:*",
         "@termuijs/data": "workspace:*",

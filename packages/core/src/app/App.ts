@@ -129,6 +129,7 @@ export class App {
             this.screen.invalidate();
             this.layers.resize(cols, rows);
             this.events.emit('resize', { cols, rows });
+            (this._rootWidget as any).markDirty?.();
             this.requestRender();
         });
 
@@ -174,8 +175,9 @@ export class App {
             this.events.emit('mouse', event);
         });
 
-        // Start render loop
-        this.renderer.start();
+        // Start render loop — tick drives requestRender() so dirty widgets
+        // (motion, timers) get redrawn without a separate setInterval.
+        this.renderer.start(() => this.requestRender());
 
         // Mount root widget
         this._rootWidget.mount?.();
@@ -238,8 +240,9 @@ export class App {
         // Skip full layout pass if widget tree reports nothing has changed.
         // isDirty propagates upward via markDirty(), so the root being clean
         // means no descendant needs re-rendering either.
+        // Do NOT call requestFrame() here — back buffer is stale after swap()
+        // and flushing it would write old content over the current display.
         if (this._rootWidget.isDirty === false) {
-            this.renderer.requestFrame();
             return;
         }
 
