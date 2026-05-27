@@ -1,4 +1,4 @@
-name: GSSoC — Auto-label PRs
+name: GSSoC / Auto-label PRs
 
 on:
   pull_request_target:

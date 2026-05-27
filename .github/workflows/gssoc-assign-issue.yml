@@ -1,4 +1,4 @@
-name: GSSoC — Auto-assign on claim
+name: GSSoC / Auto-assign on claim
 
 on:
   issue_comment:
@@ -22,7 +22,7 @@ jobs:
             const number = context.payload.issue.number;
             const issue  = context.payload.issue;
 
-            // Claim phrases — accept several variants
+            // Claim phrases. Accept several variants.
             const CLAIM_RE = /(work on this|claim this|assign me|i would like to work|please assign|i'd like to work|let me work on this)/i;
             if (!CLAIM_RE.test(body)) {
               core.info('Comment does not match claim pattern; ignoring.');
@@ -42,7 +42,7 @@ jobs:
               await github.rest.issues.createComment({
                 ...context.repo,
                 issue_number: number,
-                body: `Hey @${user}, this issue is already assigned to @${currentAssignees[0]}. If they don't open a PR within 7 days the issue will be freed up automatically.`,
+                body: `Hi @${user}. @${currentAssignees[0]} already claimed this issue. The bot frees it automatically if they do not open a PR within 7 days.`,
               });
               return;
             }
@@ -64,15 +64,15 @@ jobs:
               ...context.repo,
               issue_number: number,
               body: [
-                `✅ Assigned to @${user}!`,
+                `✅ Assigned to @${user}.`,
                 ``,
-                `Please open a PR by **${due}** (7 days from now). After that, the issue is automatically freed for another contributor.`,
+                `Open your PR by **${due}** (7 days from now). The bot frees this issue for another contributor after that date.`,
                 ``,
                 `**Reminders:**`,
-                `- ⭐ Star the repo before opening the PR (the \`star-check\` job blocks merge otherwise)`,
+                `- ⭐ Star the repo first. The \`star-check\` job blocks your merge otherwise.`,
                 `- PR title: \`type: short description\``,
-                `- Link this issue in the PR body: \`Closes #${number}\``,
+                `- Link this issue in your PR body: \`Closes #${number}\``,
                 ``,
-                `Good luck! 🚀`,
+                `Good luck. 🚀`,
               ].join('\n'),
             });

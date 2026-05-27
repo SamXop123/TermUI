@@ -8,25 +8,25 @@ assignees: ''
 
 ## What problem does this solve?
 
-<!-- Describe the use case. What are you trying to build that TermUI doesn't support yet? -->
+<!-- Describe your use case. What are you building? What does TermUI miss today? -->
 
 ## Proposed solution
 
-<!-- How would you like this to work? Include API sketches if you have ideas. -->
+<!-- How should this work? Include an API sketch if you have one. -->
 
 ```typescript
-// Example usage (if applicable)
+// Example usage
 ```
 
 ## Alternatives considered
 
-<!-- Have you tried working around this? What other approaches did you consider? -->
+<!-- Workarounds you tried. Other approaches you considered. -->
 
 ## Which package would this belong in?
 
-<!-- e.g. @termuijs/widgets, @termuijs/core, new package -->
+<!-- Example: @termuijs/widgets, @termuijs/core, or a new package. -->
 
 ## GSSoC contributor?
 
-- [ ] Yes — I'm a GSSoC 2026 contributor and would like to work on this
-- [ ] No, just a suggestion
+- [ ] Yes. You contribute under GSSoC 2026 and want to work on this.
+- [ ] No. You are filing a suggestion.

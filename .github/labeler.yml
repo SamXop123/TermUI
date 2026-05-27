@@ -1,5 +1,5 @@
-# Path-based PR labels — consumed by actions/labeler@v5
-# Triggered from .github/workflows/gssoc-auto-label.yml
+# Path-based PR labels. Consumed by actions/labeler@v5.
+# .github/workflows/gssoc-auto-label.yml triggers this.
 
 # ── Area labels (one per package) ─────────────────────────────────
 "area:core":

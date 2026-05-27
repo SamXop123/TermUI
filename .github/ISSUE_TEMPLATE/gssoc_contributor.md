@@ -6,36 +6,35 @@ labels: ["gssoc-request"]
 assignees: ''
 ---
 
-<!-- Welcome to TermUI's GSSoC 2026 cohort! Fill this in before claiming any issue. -->
+<!-- Welcome to TermUI's GSSoC 2026 cohort. Fill this in before you claim an issue. -->
 
 ## Your GSSoC profile
 
-<!-- Paste your gssoc.girlscript.org profile URL -->
+<!-- Paste your gssoc.girlscript.org profile URL. -->
 https://gssoc.girlscript.org/profile/____
 
 ## GitHub username
 
 @
 
-## Have you starred this repo?
+## Did you star this repo?
 
-- [ ] Yes ⭐ (required — your PRs will be blocked otherwise)
+- [ ] Yes ⭐. Required. Your PRs will be blocked otherwise.
 
 ## Your experience level
 
-- [ ] Beginner (first open-source contribution)
-- [ ] Intermediate (some open-source experience)
-- [ ] Advanced (regular contributor)
+- [ ] Beginner. Your first open-source contribution.
+- [ ] Intermediate. Some open-source experience.
+- [ ] Advanced. You contribute regularly.
 
-## What's your background?
+## Your background
 
-<!-- Languages, frameworks, terminal UI experience, etc. -->
+<!-- Languages, frameworks, terminal UI experience. -->
 
 ## Area or issue you want to work on
 
-<!-- Link an existing issue you want to claim, OR describe a new contribution. -->
-<!-- Browse open good-first-issues: https://github.com/Karanjot786/TermUI/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22 -->
+<!-- Link an existing issue you want to claim, or describe a new contribution. Browse open good-first-issues: https://github.com/Karanjot786/TermUI/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22 -->
 
-## How can the mentor help?
+## How your mentor helps
 
-<!-- Anything specific you need help with — setup, architecture questions, etc. -->
+<!-- Tell us what you need. Setup, architecture, debugging, etc. -->

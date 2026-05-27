@@ -1,24 +1,24 @@
 ---
 name: 🐛 Bug report
-about: Something isn't working as expected
+about: Something is not working as expected
 title: "[bug] "
 labels: ["type:bug"]
 assignees: ''
 ---
 
-<!-- Before filing: search existing issues, and run on the latest version. -->
+<!-- Search existing issues first. Run on the latest version. -->
 
 ## Which package?
 
-<!-- e.g. @termuijs/core, @termuijs/widgets, @termuijs/jsx -->
+<!-- Example: @termuijs/core, @termuijs/widgets, @termuijs/jsx -->
 
 ## What happened?
 
-<!-- Describe the bug clearly. What did you expect vs. what actually happened? -->
+<!-- Describe the bug. What you expected vs. what happened. -->
 
 ## Steps to reproduce
 
-<!-- Minimal code or steps to trigger the bug -->
+<!-- Minimal code or steps to trigger the bug. -->
 
 ```typescript
 // paste your code here
@@ -33,9 +33,9 @@ assignees: ''
 
 ## Screenshots or terminal output
 
-<!-- If applicable, paste the terminal output or attach a screenshot -->
+<!-- Paste terminal output or attach a screenshot if useful. -->
 
 ## GSSoC contributor?
 
-- [ ] Yes — I'm a GSSoC 2026 contributor
-- [ ] No
+- [ ] Yes. You contribute under GSSoC 2026.
+- [ ] No.

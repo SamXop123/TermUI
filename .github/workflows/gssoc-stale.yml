@@ -1,4 +1,4 @@
-name: GSSoC — Stale issues and assignments
+name: GSSoC / Stale issues and assignments
 
 on:
   schedule:
@@ -19,13 +19,13 @@ jobs:
           days-before-stale: 14
           days-before-close: 7
           stale-issue-message: |
-            This issue has been inactive for 14 days. If it's still relevant, comment to keep it open. Otherwise it will be closed in 7 days.
+            No activity on this issue for 14 days. Comment to keep it open. It closes in 7 days otherwise.
           stale-pr-message: |
-            This PR has been inactive for 14 days. Please rebase and resolve any conflicts, or comment to keep it open. Otherwise it will be closed in 7 days.
+            No activity on this PR for 14 days. Rebase, resolve conflicts, or comment to keep it open. It closes in 7 days otherwise.
           close-issue-message: |
-            Closing this as stale. Reopen anytime with new context.
+            Closing as stale. Reopen any time with new context.
           close-pr-message: |
-            Closing this PR as stale. Reopen anytime if you'd like to continue.
+            Closing as stale. Reopen any time to continue your work.
           stale-issue-label: stale
           stale-pr-label: stale
           exempt-issue-labels: "pinned,gssoc:approved,good first issue,help wanted,assigned"
@@ -96,7 +96,7 @@ jobs:
                 body: [
                   `⏰ Auto-unassigned: no PR opened within 7 days.`,
                   ``,
-                  `@${assignees.join(', @')} — feel free to re-claim by commenting \`I would like to work on this\` again.`,
+                  `@${assignees.join(', @')}, re-claim it by commenting \`I would like to work on this\` again.`,
                   ``,
                   `Other contributors can now pick this up.`,
                 ].join('\n'),

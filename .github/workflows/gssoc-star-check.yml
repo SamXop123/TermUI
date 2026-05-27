@@ -1,4 +1,4 @@
-name: GSSoC — Star check
+name: GSSoC / Star check
 
 on:
   pull_request_target:
@@ -20,7 +20,7 @@ jobs:
             const user   = context.payload.pull_request.user.login;
             const number = context.payload.pull_request.number;
 
-            // Maintainer bypass — don't gate self-merges
+            // Maintainer bypass. Self-merges skip the gate.
             const MAINTAINERS = ['Karanjot786'];
             if (MAINTAINERS.includes(user)) {
               core.info(`@${user} is a maintainer; skipping star check.`);
@@ -51,7 +51,7 @@ jobs:
                 });
                 core.info('Removed needs-star label.');
               } catch (e) {
-                // label not present — fine
+                // label not present, fine
               }
               return;
             }
@@ -63,7 +63,7 @@ jobs:
               labels: ['needs-star'],
             });
 
-            // Avoid duplicate comments — only post if we haven't already
+            // Avoid duplicate comments. Post only if we have not already.
             const { data: comments } = await github.rest.issues.listComments({
               ...context.repo,
               issue_number: number,
@@ -79,11 +79,11 @@ jobs:
                 body: [
                   `Hi @${user} 👋`,
                   ``,
-                  `Please ⭐ **[star this repo](https://github.com/${context.repo.owner}/${context.repo.repo})** before this PR can be merged.`,
+                  `⭐ **[Star this repo](https://github.com/${context.repo.owner}/${context.repo.repo})** before your PR merges.`,
                   ``,
-                  `GSSoC 2026 contributors who star get **priority review** and points credit. Once you star, push any commit (or re-run this check) and the \`needs-star\` label will lift automatically.`,
+                  `Why? GSSoC 2026 contributors who star get priority review and points credit. After you star, push any commit (or re-run this check). The \`needs-star\` label lifts automatically.`,
                   ``,
-                  `_Thanks for contributing to TermUI!_`,
+                  `_Thanks for your contribution to TermUI._`,
                 ].join('\n'),
               });
             }
