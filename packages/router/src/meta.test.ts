@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Router } from './router.js';
 import { useRouteMeta } from './hooks.js';
+import { matchRoute } from './route.js';
 import { unmountAll } from '@termuijs/jsx';
 import { render } from '@termuijs/testing';
 
@@ -121,5 +122,14 @@ describe('Router meta fields', () => {
         expect(r.routes[0]?.beforeEnter).toBe(beforeEnter);
         expect(r.routes[0]?.meta).toEqual({ title: 'Dashboard' });
         expect((r.routes[0]?.meta as any).beforeEnter).toBeUndefined();
+    });
+
+    it('matchRoute does not mutate source route object', () => {
+        const route = { path: '/test', component: () => 'Test' };
+        const match = matchRoute('/test', [route]);
+
+        expect(match).toBeDefined();
+        expect(match?.meta).toEqual({});
+        expect((route as any).meta).toBeUndefined();
     });
 });

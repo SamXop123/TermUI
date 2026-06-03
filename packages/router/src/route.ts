@@ -41,7 +41,7 @@ export interface RouteMatch {
     route: Route;
     chain: Route[];
     params: RouteParams;
-    meta?: RouteMeta;
+    meta: RouteMeta;
 }
 
 /**
@@ -115,12 +115,11 @@ function matchNested(
             for (let i = 0; i < paramNames.length; i++) {
                 params[paramNames[i]] = match[i + 1] ?? '';
             }
-            route.meta = route.meta ?? {};
             return {
                 route,
                 chain: [...chain, route],
                 params,
-                meta: route.meta,
+                meta: route.meta ?? {},
             };
         }
 
