@@ -106,7 +106,16 @@ export class Router {
             finalOptions = childrenOrOptions;
         }
 
-        const finalMeta = meta ?? {};
+        let finalMeta = meta ?? {};
+        if (options === undefined && meta && typeof meta === 'object' && ('lazy' in meta || 'beforeEnter' in meta || 'afterEnter' in meta)) {
+            finalOptions = meta as any;
+            const strippedMeta = { ...meta };
+            delete (strippedMeta as any).lazy;
+            delete (strippedMeta as any).beforeEnter;
+            delete (strippedMeta as any).afterEnter;
+            finalMeta = strippedMeta;
+        }
+
         const { pattern, paramNames } = compilePattern(path);
 
         this._routes.push({

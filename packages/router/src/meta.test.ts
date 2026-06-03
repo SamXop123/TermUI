@@ -105,4 +105,21 @@ describe('Router meta fields', () => {
         
         t.unmount();
     });
+
+    it('handles 5-argument form with children and options correctly', () => {
+        const r = new Router();
+        const beforeEnter = vi.fn().mockReturnValue(true);
+        
+        r.addRoute(
+            '/dashboard',
+            () => 'Dashboard',
+            undefined,
+            [{ path: '/dashboard/settings', component: () => 'Settings' }],
+            { beforeEnter, title: 'Dashboard' } as any
+        );
+
+        expect(r.routes[0]?.beforeEnter).toBe(beforeEnter);
+        expect(r.routes[0]?.meta).toEqual({ title: 'Dashboard' });
+        expect((r.routes[0]?.meta as any).beforeEnter).toBeUndefined();
+    });
 });
